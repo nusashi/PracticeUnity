@@ -76,40 +76,50 @@ public class GameManager : MonoBehaviour
 
 	private void Move (ActiveInputKey key)
 	{
-		BaggageMatrix currentPlayerMatrixData = _playerMatrixData;
+		int x = 0;
+		int y = 0;
 		switch (key)
 		{
 			case ActiveInputKey.w:
 				// 上へ進む処理
-				currentPlayerMatrixData.y++;
+				y++;
 				break;
 			case ActiveInputKey.a:
 				// 左へ進む処理
-				currentPlayerMatrixData.x--;
+				x--;
 				break;
 			case ActiveInputKey.s:
 				// 下へ進む処理
-				currentPlayerMatrixData.y--;
+				y--;
 				break;
 			case ActiveInputKey.d:
 				// 右へ進む処理
-				currentPlayerMatrixData.x++;
+				x++;
 				break;
 			default:
 				break;
 		}
 		// 壁の場合の処理
-		if (IsWallZone (currentPlayerMatrixData.x, currentPlayerMatrixData.y)) return;
+		if (IsWallZone (_playerMatrixData.x + x, _playerMatrixData.y + y)) return;
 		// 穴の場合の処理
-		if (_holeMatrixDataList.FindIndex ((data) => { return data.x == currentPlayerMatrixData.x && data.y == currentPlayerMatrixData.y; }) != -1) return;
+		if (_holeMatrixDataList.FindIndex ((data) => { return data.x == _playerMatrixData.x + x && data.y == _playerMatrixData.y + y; }) != -1) return;
 		// プレイヤーと荷物との処理
+		int baggageIndex = _baggageMatrixDataList.FindIndex ((data) => { return data.x == _playerMatrixData.x + x && data.y == _playerMatrixData.y + y; });
+		if (baggageIndex != -1)
+		{
+			// if (IsWallZone (_baggageMatrixDataList[baggageIndex].x, _baggageMatrixDataList[baggageIndex].y)) return;
+			// 荷物と穴の処理
+		}
+		else
+		{
 
-		// 荷物と穴の処理
+		}
 
 		// 最終描画処理
 		_cubeMatrixList[_playerMatrixData.x][_playerMatrixData.y].GetComponent<MeshRenderer> ().material = _white;
-		_cubeMatrixList[currentPlayerMatrixData.x][currentPlayerMatrixData.y].GetComponent<MeshRenderer> ().material = _blue;
-		_playerMatrixData = currentPlayerMatrixData;
+		_cubeMatrixList[_playerMatrixData.x + x][_playerMatrixData.y + y].GetComponent<MeshRenderer> ().material = _blue;
+		_playerMatrixData.x += x;
+		_playerMatrixData.y += y;
 	}
 	private void CreatePlayCube ()
 	{
