@@ -25,16 +25,18 @@ public class GameManager : MonoBehaviour
 		public int y { get; set; }
 	}
 	private const int LINE_MAX_COUNT = 10;
-	private const int BAGGAGE_MAX_COUNT = 1;
+	private const int BAGGAGE_MAX_COUNT = 2;
 	[SerializeField] private Material _white = null;
 	[SerializeField] private Material _black = null;
 	[SerializeField] private Material _blue = null;
+	[SerializeField] private Material _yellow = null;
 	[SerializeField] private Material _green = null;
-	[SerializeField] private Material _olive = null;
+	[SerializeField] private Material _red = null;
 	private List<List<GameObject>> _cubeMatrixList = null;
 	private List<BaggageMatrix> _initializeSelectableMatrixDataList = null;
 	private List<BaggageMatrix> _baggageMatrixDataList = null;
 	private List<BaggageMatrix> _holeMatrixDataList = null;
+	private List<BaggageMatrix> _clearMatrixDataList = null;
 	private BaggageMatrix _playerMatrixData;
 	private ActiveInputKey _inputKey = ActiveInputKey.none;
 
@@ -44,12 +46,13 @@ public class GameManager : MonoBehaviour
 		_initializeSelectableMatrixDataList = new List<BaggageMatrix> ();
 		_baggageMatrixDataList = new List<BaggageMatrix> ();
 		_holeMatrixDataList = new List<BaggageMatrix> ();
+		_clearMatrixDataList = new List<BaggageMatrix> ();
 		_playerMatrixData = new BaggageMatrix (0, 0);
 		CreatePlayCube ();
 		InitializeWall ();
-		InitializeBaggage ();
 		InitializeHole ();
 		InitializePlayer ();
+		InitializeBaggage ();
 	}
 
 	private void Update ()
@@ -66,10 +69,48 @@ public class GameManager : MonoBehaviour
 		}
 		else if (Input.GetKeyUp ((UnityEngine.KeyCode) _inputKey))
 		{
-			// TODO 移動処理
+			Move (_inputKey);
+			_inputKey = ActiveInputKey.none;
 		}
 	}
 
+	private void Move (ActiveInputKey key)
+	{
+		BaggageMatrix currentPlayerMatrixData = _playerMatrixData;
+		switch (key)
+		{
+			case ActiveInputKey.w:
+				// 上へ進む処理
+				currentPlayerMatrixData.y++;
+				break;
+			case ActiveInputKey.a:
+				// 左へ進む処理
+				currentPlayerMatrixData.x--;
+				break;
+			case ActiveInputKey.s:
+				// 下へ進む処理
+				currentPlayerMatrixData.y--;
+				break;
+			case ActiveInputKey.d:
+				// 右へ進む処理
+				currentPlayerMatrixData.x++;
+				break;
+			default:
+				break;
+		}
+		// 壁の場合の処理
+		if (IsWallZone (currentPlayerMatrixData.x, currentPlayerMatrixData.y)) return;
+		// 穴の場合の処理
+		if (_holeMatrixDataList.FindIndex ((data) => { return data.x == currentPlayerMatrixData.x && data.y == currentPlayerMatrixData.y; }) == -1) return;
+		// プレイヤーと荷物との処理
+
+		// 荷物と穴の処理
+
+		// 最終描画処理
+		_cubeMatrixList[_playerMatrixData.x][_playerMatrixData.y].GetComponent<MeshRenderer> ().material = _white;
+		_cubeMatrixList[currentPlayerMatrixData.x][currentPlayerMatrixData.y].GetComponent<MeshRenderer> ().material = _blue;
+		_playerMatrixData = currentPlayerMatrixData;
+	}
 	private void CreatePlayCube ()
 	{
 		for (int x = 0; x < LINE_MAX_COUNT; x++)
@@ -103,13 +144,31 @@ public class GameManager : MonoBehaviour
 			{
 				if (IsWallZone (x, y))
 				{
-					_cubeMatrixList[x][y].GetComponent<MeshRenderer> ().material = _black;
-					_initializeSelectableMatrixDataList.Remove (new BaggageMatrix (x, y));
+					_cubeMatrixList[x][y].GetComponent<MeshRenderer> ().material = _yellow;
+					int index = _initializeSelectableMatrixDataList.FindIndex ((data) => { return data.x == x && data.y == y; });
+					if (index != -1) _initializeSelectableMatrixDataList.RemoveAt (index);
 				}
 			}
 		}
 	}
 
+	private void InitializeHole ()
+	{
+		for (int i = 0; i < BAGGAGE_MAX_COUNT; i++)
+		{
+			int index = UnityEngine.Random.Range (0, _initializeSelectableMatrixDataList.Count);
+			_holeMatrixDataList.Add (_initializeSelectableMatrixDataList[index]);
+			_cubeMatrixList[_initializeSelectableMatrixDataList[index].x][_initializeSelectableMatrixDataList[index].y].GetComponent<MeshRenderer> ().material = _black;
+			_initializeSelectableMatrixDataList.RemoveAt (index);
+		}
+	}
+	private void InitializePlayer ()
+	{
+		int index = UnityEngine.Random.Range (0, _initializeSelectableMatrixDataList.Count);
+		_playerMatrixData = _initializeSelectableMatrixDataList[index];
+		_cubeMatrixList[_initializeSelectableMatrixDataList[index].x][_initializeSelectableMatrixDataList[index].y].GetComponent<MeshRenderer> ().material = _blue;
+		_initializeSelectableMatrixDataList.RemoveAt (index);
+	}
 	private bool IsBaggageZone (int x, int y)
 	{
 		return (x > 0 || x < LINE_MAX_COUNT - 1) || (y > 0 || y < LINE_MAX_COUNT - 1);
@@ -117,21 +176,14 @@ public class GameManager : MonoBehaviour
 
 	private void InitializeBaggage ()
 	{
+		_initializeSelectableMatrixDataList = _initializeSelectableMatrixDataList.FindAll ((data) => { return IsBaggageZone (data.x, data.y); });
+
 		for (int i = 0; i < BAGGAGE_MAX_COUNT; i++)
 		{
-			int x = UnityEngine.Random.Range (1, LINE_MAX_COUNT - 2);
-			int y = UnityEngine.Random.Range (1, LINE_MAX_COUNT - 2);
-
+			int index = UnityEngine.Random.Range (0, _initializeSelectableMatrixDataList.Count);
+			_baggageMatrixDataList.Add (_initializeSelectableMatrixDataList[index]);
+			_cubeMatrixList[_initializeSelectableMatrixDataList[index].x][_initializeSelectableMatrixDataList[index].y].GetComponent<MeshRenderer> ().material = _red;
+			_initializeSelectableMatrixDataList.RemoveAt (index);
 		}
-	}
-
-	private void InitializeHole ()
-	{
-
-	}
-
-	private void InitializePlayer ()
-	{
-
 	}
 }
