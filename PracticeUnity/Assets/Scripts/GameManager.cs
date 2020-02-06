@@ -101,7 +101,7 @@ public class GameManager : MonoBehaviour
 		// 壁の場合の処理
 		if (IsWallZone (currentPlayerMatrixData.x, currentPlayerMatrixData.y)) return;
 		// 穴の場合の処理
-		if (_holeMatrixDataList.FindIndex ((data) => { return data.x == currentPlayerMatrixData.x && data.y == currentPlayerMatrixData.y; }) == -1) return;
+		if (_holeMatrixDataList.FindIndex ((data) => { return data.x == currentPlayerMatrixData.x && data.y == currentPlayerMatrixData.y; }) != -1) return;
 		// プレイヤーと荷物との処理
 
 		// 荷物と穴の処理
